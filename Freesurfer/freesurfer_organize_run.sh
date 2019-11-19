@@ -20,11 +20,15 @@ do
 
 #copies needed data from shared folder to working directory
 	cp $filepath/${a}/${t1path} ${a}/${a}
-  mv ${a}/${a}/*.nii* ${a}/${a}/T1.nii
-  cp $scriptdir/freesurfer_slurm_run.sh ${a}
+	mv ${a}/${a}/*.nii* ${a}/${a}/T1.nii
+	cp $scriptdir/freesurfer_slurm_run.sh ${a}
+
+#edit subject number placeholder in slurm script
+	sed -i -e 's/INDV_SUBJECTID/${a}/g' ${a}/freesurfer_slurm_run.sh 
 
 #drops down in to subject folder and starts freesurfer run
  	cd ${a}/
 		sbatch freesurfer_slurm_run.sh
-  cd ../
+	cd ../
  	echo "freesurfer run started for " ${a}
+done
