@@ -129,6 +129,9 @@ print('Mean Squared Error:', metrics.mean_squared_error(y_test, y_pred))
 print('Root Mean Squared Error:', np.sqrt(metrics.mean_squared_error(y_test, y_pred)))
 
 #To retrieve the intercept:
-print(regr.intercept_)
+print('intercept:', regr.intercept_)
 #For retrieving the slope:
-print(regr.coef_)
+print('slope:', regr.coef_)
+
+r_sq = model.score(x, y)
+print('coefficient of determination:', r_sq)
