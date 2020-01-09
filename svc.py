@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Nov 25 17:25:31 2019
+Created on Tue Sep 17 14:58:55 2019
 
-@author: lussier
+@author: desir
 """
 
 import pandas as pd
 import itertools
 from pandas import DataFrame
-import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split, cross_val_predict, cross_val_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC, LinearSVC
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-from sklearn.feature_selection import SelectFromModel, RFE
 
 #designate input file
 input_file = "MLpain_old_vol_icvcontrol.csv"
@@ -29,24 +28,31 @@ X = dataset.iloc[:, 29:]  #select column through end, predictors
 y = dataset.iloc[:, 17]   #select column, target
 
 #shuffle the data and split the sample into training and test data
-X_train, X_test, y_train, y_test = train_test_split( X, y, train_size=.8, test_size=.2, stratify = y, shuffle=True)
+X_train, X_test, y_train, y_test = train_test_split( X, y, train_size=.9, test_size=.1, stratify = y, shuffle=True)
 
 #standarize features
 scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
-logreg = LogisticRegression(penalty='l1', C=1e4, solver='liblinear', multi_class='auto')
+#clf = SVC(C=1.0, kernel='rbf', degree=3, gamma='scale', coef0=0.0, shrinking=True, 
+#          probability=False, tol=0.001, class_weight=None, verbose=False, 
+#          max_iter=-1, decision_function_shape='ovo', random_state=None)
+
+clf = LinearSVC(penalty='l1', loss='squared_hinge', dual=False, tol=0.0001, C=1.0, multi_class='ovr', 
+                fit_intercept=True, intercept_scaling=1, class_weight=None, verbose=0, random_state=None, 
+                max_iter=1000)
+
+
+clf.fit(X_train, y_train)
 
 #train model
-logreg.fit(X_train, y_train)
-
-#acc = logreg.score(X_test, y_test)
-acc = logreg.score(X_train, y_train)
+clf.fit(X_train, y_train)
+acc = clf.score(X_train, y_train)
 print("Accuracy: %.4f" % acc)
 
 # predict the training data based on the model
-y_pred = logreg.predict(X_train)
+y_pred = clf.predict(X_train)
 
 #print classification report
 report = classification_report(y_train, y_pred)
@@ -56,19 +62,12 @@ print(report)
 cm = confusion_matrix(y_true=y_train, y_pred = y_pred) 
 print(cm)
 
-#To retrieve the intercept:
-print(logreg.intercept_)
-
-#For retrieving the slope:
-print(logreg.coef_)
-
-
 # cross-validation
-y_pred = cross_val_predict(logreg, X_train, y_train, 
+y_pred = cross_val_predict(clf, X_train, y_train, 
                            groups=y_train, cv=10)
 
 # Evaluate a score for each cross-validation fold
-acc = cross_val_score(logreg, X_train, y_train, 
+acc = cross_val_score(clf, X_train, y_train, 
                      groups=y_train, cv=10)
 
 for i in range(10):
@@ -97,10 +96,10 @@ for i, j in itertools.product(range(overall_cm.shape[0]), range(overall_cm.shape
 
 
 #test model
-logreg.fit(X_train, y_train) # fit to training data
+clf.fit(X_train, y_train) # fit to training data
 
-y_pred = logreg.predict(X_test) # classify pain group using testing data
-acc = logreg.score(X_test, y_test) # get accuracy
+y_pred = clf.predict(X_test) # classify pain group using testing data
+acc = clf.score(X_test, y_test) # get accuracy
 cr = classification_report(y_pred=y_pred, y_true=y_test) # get prec., recall & f1
 cm = confusion_matrix(y_pred=y_pred, y_true=y_test) # get confusion matrix
 
@@ -110,7 +109,6 @@ print(cr)
 
 print('confusion matrix:')
 print(cm)
-
 
 ## plot results
 thresh = cm.max() / 2
@@ -122,16 +120,3 @@ for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
         plt.text(j+0.5, i+0.5, format(cm[i, j], 'd'),
                  horizontalalignment="center",
                  color="white")
-        
-
-
-model = SelectFromModel(logreg, prefit=True)
-X_new = model.transform(X)
-print(X_new.shape)
-
-selector = RFE(logreg, 1)
-selector = selector.fit(X_train, y_train)
-selector.support_ 
-order = selector.ranking_
-order
-print(order)
